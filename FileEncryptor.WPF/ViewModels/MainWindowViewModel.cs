@@ -1,6 +1,7 @@
 ﻿using FileEncryptor.WPF.Infrastructure.Commands;
 using FileEncryptor.WPF.Services.Interfaces;
 using FileEncryptor.WPF.ViewModels.Base;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Input;
 
@@ -8,7 +9,11 @@ namespace FileEncryptor.WPF.ViewModels
 {
     internal class MainWindowViewModel : ViewModel
     {
+        private const string EncryptedFileSuffix = ".encrypted";
+
         private readonly IUserDialog _userDialog;
+
+        private readonly IEncryptor _encryptor;
 
         #region Title : string - Заголовок окна
 
@@ -124,6 +129,18 @@ namespace FileEncryptor.WPF.ViewModels
             {
                 return;
             }
+
+            string defaultFileName = file.FullName + EncryptedFileSuffix;
+
+            if (!_userDialog.SaveFile("Selecting a file for save", out string destinationPath, 
+                    defaultFileName)) return;
+
+            var timer = Stopwatch.StartNew();
+            _encryptor.Encrypt(file.FullName, destinationPath, Password);
+            timer.Stop();
+
+            _userDialog.Information("Encryption", "File encryption completed successfully in " +
+                                                  $"{timer.Elapsed.TotalSeconds:0.##} sec");
         }
 
         #endregion
@@ -158,15 +175,39 @@ namespace FileEncryptor.WPF.ViewModels
             {
                 return;
             }
+
+            string defaultFileName = file.FullName.EndsWith(EncryptedFileSuffix)
+                ? file.FullName[..^EncryptedFileSuffix.Length]
+                : file.FullName;
+
+            if (!_userDialog.SaveFile("Selecting a file to save", out string destinationPath, 
+                    defaultFileName))
+            {
+                return;
+            }
+
+            var timer = Stopwatch.StartNew();
+            bool success = _encryptor.Decrypt(file.FullName, destinationPath, Password);
+            timer.Stop();
+
+            if (success)
+            {
+                _userDialog.Information("Decryption", "File decryption completed successfully in " +
+                                                      $"{timer.Elapsed.TotalSeconds:0.##} с");
+                return;
+            }
+
+            _userDialog.Warning("Decryption", "File decryption error: invalid password");
         }
 
         #endregion
 
         #endregion
 
-        public MainWindowViewModel(IUserDialog userDialog)
+        public MainWindowViewModel(IUserDialog userDialog, IEncryptor encryptor)
         {
             _userDialog = userDialog;
+            _encryptor = encryptor;
         }
     }
 }
