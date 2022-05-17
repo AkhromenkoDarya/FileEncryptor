@@ -1,9 +1,12 @@
-﻿using FileEncryptor.WPF.Infrastructure.Commands;
+﻿using System;
+using FileEncryptor.WPF.Infrastructure.Commands;
 using FileEncryptor.WPF.Services.Interfaces;
 using FileEncryptor.WPF.ViewModels.Base;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Input;
+using FileEncryptor.WPF.Infrastructure.Commands.Base;
 
 namespace FileEncryptor.WPF.ViewModels
 {
@@ -121,7 +124,7 @@ namespace FileEncryptor.WPF.ViewModels
         /// <summary>
         /// Логика выполнения - Команда шифрования файла.
         /// </summary>
-        private void OnEncryptCommandExecuted(object p)
+        private async void OnEncryptCommandExecuted(object p)
         {
             FileInfo file = p as FileInfo ?? SelectedFile;
 
@@ -132,11 +135,27 @@ namespace FileEncryptor.WPF.ViewModels
 
             string defaultFileName = file.FullName + EncryptedFileSuffix;
 
-            if (!_userDialog.SaveFile("Selecting a file for save", out string destinationPath, 
-                    defaultFileName)) return;
+            if (!_userDialog.SaveFile("Selecting a file for save", out string destinationPath,
+                    defaultFileName))
+            {
+                return;
+            }
 
             var timer = Stopwatch.StartNew();
-            _encryptor.Encrypt(file.FullName, destinationPath, Password);
+            ((Command)EncryptCommand).Executable = false;
+            ((Command)DecryptCommand).Executable = false;
+
+            try
+            {
+                await _encryptor.EncryptAsync(file.FullName, destinationPath, Password);
+            }
+            catch (OperationCanceledException)
+            {
+
+            }
+
+            ((Command)EncryptCommand).Executable = true;
+            ((Command)DecryptCommand).Executable = true;
             timer.Stop();
 
             _userDialog.Information("Encryption", "File encryption completed successfully in " +
@@ -167,7 +186,7 @@ namespace FileEncryptor.WPF.ViewModels
         /// <summary>
         /// Логика выполнения - Команда дешифрования файла.
         /// </summary>
-        private void OnDecryptCommandExecuted(object p)
+        private async void OnDecryptCommandExecuted(object p)
         {
             FileInfo file = p as FileInfo ?? SelectedFile;
 
@@ -187,7 +206,26 @@ namespace FileEncryptor.WPF.ViewModels
             }
 
             var timer = Stopwatch.StartNew();
-            bool success = _encryptor.Decrypt(file.FullName, destinationPath, Password);
+            ((Command)EncryptCommand).Executable = false;
+            ((Command)DecryptCommand).Executable = false;
+
+            Task<bool> decryptionTask = _encryptor.DecryptAsync(file.FullName, destinationPath, 
+                Password);
+            // Дополнительный код, выполняемый параллельно процессу дешифрования.
+
+            var success = false;
+
+            try
+            {
+                success = await decryptionTask;
+            }
+            catch (OperationCanceledException)
+            {
+
+            }
+
+            ((Command)EncryptCommand).Executable = true;
+            ((Command)DecryptCommand).Executable = true;
             timer.Stop();
 
             if (success)
