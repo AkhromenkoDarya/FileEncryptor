@@ -5,7 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <StartupObject>FileEncryptor.WPF.Program</StartupObject>
-    <ApplicationIcon />
+    <ApplicationIcon/>
   </PropertyGroup>
 
   <ItemGroup>

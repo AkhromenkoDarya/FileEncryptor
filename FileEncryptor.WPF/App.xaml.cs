@@ -3,8 +3,10 @@ using FileEncryptor.WPF.ViewModels.Registration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Markup;
 
 namespace FileEncryptor.WPF
 {
@@ -30,8 +32,14 @@ namespace FileEncryptor.WPF
         
         protected override async void OnStartup(StartupEventArgs e)
         {
-                IHost host = Host;
+            IHost host = Host;
             base.OnStartup(e);
+
+            FrameworkElement.LanguageProperty.OverrideMetadata(
+                typeof(FrameworkElement),
+                new FrameworkPropertyMetadata(
+                    XmlLanguage.GetLanguage(CultureInfo.CurrentUICulture.IetfLanguageTag)));
+
             await host.StartAsync();
         }
 

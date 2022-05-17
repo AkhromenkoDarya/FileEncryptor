@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:l="clr-namespace:FileEncryptor.WPF"
+        xmlns:conv="clr-namespace:FileEncryptor.WPF.Infrastructure.Converters"
         DataContext="{Binding MainWindowModel, Source={StaticResource Locator}}"
         Title="{Binding Title}"
         mc:Ignorable="d"
@@ -58,9 +59,10 @@
                 <TextBox IsReadOnly="True" BorderThickness="0" Text="{Binding SelectedFile.Name, 
                     Mode=OneWay}" ToolTip="{Binding SelectedFile.FullName}"/>
             </DockPanel>
-            <TextBlock Grid.Column="0" Grid.Row="2" Text="Size"/>
+            <TextBlock Grid.Column="0" Grid.Row="2" Text="Size:"/>
             <TextBox Grid.Column="1" Grid.Row="2" IsReadOnly="True" Text="{Binding SelectedFile.Length, 
-                Mode=OneWay}" BorderThickness="0"/>
+                Mode=OneWay, Converter={conv:KilobyteConverter}, StringFormat={}{0:F2} KB}" 
+                     BorderThickness="0"/>
         </Grid>
     </DockPanel>
 </Window>
