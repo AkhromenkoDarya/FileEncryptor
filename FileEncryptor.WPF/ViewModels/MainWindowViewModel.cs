@@ -1,6 +1,6 @@
-﻿using FileEncryptor.ViewModels.Base;
+﻿using FileEncryptor.WPF.ViewModels.Base;
 
-namespace FileEncryptor.ViewModels
+namespace FileEncryptor.WPF.ViewModels
 {
     internal class MainWindowViewModel : ViewModel
     {

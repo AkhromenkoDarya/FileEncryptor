@@ -1,7 +1,7 @@
 ﻿using FileEncryptor.Infrastructure.Commands.Base;
 using System;
 
-namespace FileEncryptor.Infrastructure.Commands
+namespace FileEncryptor.WPF.Infrastructure.Commands
 {
     internal class RelayCommand : Command
     {

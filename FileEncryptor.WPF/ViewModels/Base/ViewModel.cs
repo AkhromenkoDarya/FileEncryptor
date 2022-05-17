@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace FileEncryptor.ViewModels.Base
+namespace FileEncryptor.WPF.ViewModels.Base
 {
     internal abstract class ViewModel : INotifyPropertyChanged
     {
