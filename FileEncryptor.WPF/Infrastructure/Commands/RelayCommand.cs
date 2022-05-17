@@ -1,5 +1,5 @@
-﻿using FileEncryptor.Infrastructure.Commands.Base;
-using System;
+﻿using System;
+using FileEncryptor.WPF.Infrastructure.Commands.Base;
 
 namespace FileEncryptor.WPF.Infrastructure.Commands
 {

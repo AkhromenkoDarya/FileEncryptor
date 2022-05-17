@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace FileEncryptor.Infrastructure.Commands.Base
+namespace FileEncryptor.WPF.Infrastructure.Commands.Base
 {
     internal abstract class Command : ICommand
     {
