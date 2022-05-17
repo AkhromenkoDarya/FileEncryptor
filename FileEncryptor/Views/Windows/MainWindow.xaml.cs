@@ -1,4 +1,4 @@
-﻿namespace FileEncryptor
+﻿namespace FileEncryptor.Views.Windows
 {
     public partial class MainWindow
     {
