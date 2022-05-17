@@ -65,11 +65,22 @@ namespace FileEncryptor.WPF.ViewModels
 
         #region Команды
 
+        #region SelectFileCommand - Команда выбора файла
+
+        /// <summary>
+        /// Команда выбора файла.
+        /// </summary>
         private ICommand _selectFileCommand;
 
+        /// <summary>
+        /// Проверка возможности выполнения - Команда выбора файла.
+        /// </summary>
         public ICommand SelectFileCommand => _selectFileCommand ??= 
             new RelayCommand(OnSelectFileCommandExecuted);
 
+        /// <summary>
+        /// Логика выполнения - Команда выбора файла.
+        /// </summary>
         private void OnSelectFileCommandExecuted()
         {
             if (!_userDialog.OpenFile("Selecting a file", out string filePath))
@@ -80,6 +91,76 @@ namespace FileEncryptor.WPF.ViewModels
             var selectedFile = new FileInfo(filePath);
             SelectedFile = selectedFile.Exists ? selectedFile : null;
         }
+
+        #endregion
+
+        #region Command EncryptCommand - Команда шифрования файла
+
+        /// <summary>
+        /// Команда шифрования файла.
+        /// </summary>
+        private ICommand _encryptCommand;
+
+        /// <summary>
+        /// Команда шифрования файла.
+        /// </summary>
+        public ICommand EncryptCommand => _encryptCommand ??=
+            new RelayCommand(OnEncryptCommandExecuted, CanEncryptCommandExecute);
+
+        /// <summary>
+        /// Проверка возможности выполнения - Команда шифрования файла.
+        /// </summary>
+        private bool CanEncryptCommandExecute(object p) => (p is FileInfo { Exists: true } || 
+            SelectedFile != null) && !string.IsNullOrWhiteSpace(Password);
+
+        /// <summary>
+        /// Логика выполнения - Команда шифрования файла.
+        /// </summary>
+        private void OnEncryptCommandExecuted(object p)
+        {
+            FileInfo file = p as FileInfo ?? SelectedFile;
+
+            if (file is null)
+            {
+                return;
+            }
+        }
+
+        #endregion
+
+        #region Command DecryptCommand - Команда дешифрования файла
+
+        /// <summary>
+        /// Команда дешифрования файла.
+        /// </summary>
+        private ICommand _decryptCommand;
+
+        /// <summary>
+        /// Команда дешифрования файла.
+        /// </summary>
+        public ICommand DecryptCommand => _decryptCommand ??=
+            new RelayCommand(OnDecryptCommandExecuted, CanDecryptCommandExecute);
+
+        /// <summary>
+        /// Проверка возможности выполнения - Команда дешифрования файла.
+        /// </summary>
+        private bool CanDecryptCommandExecute(object p) => (p is FileInfo { Exists: true } || 
+            SelectedFile != null) && !string.IsNullOrWhiteSpace(Password);
+
+        /// <summary>
+        /// Логика выполнения - Команда дешифрования файла.
+        /// </summary>
+        private void OnDecryptCommandExecuted(object p)
+        {
+            FileInfo file = p as FileInfo ?? SelectedFile;
+
+            if (file is null)
+            {
+                return;
+            }
+        }
+
+        #endregion
 
         #endregion
 
