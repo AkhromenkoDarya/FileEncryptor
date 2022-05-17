@@ -1,6 +1,7 @@
 ﻿using FileEncryptor.WPF.Services.Interfaces;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace FileEncryptor.WPF.Services
 {
@@ -46,6 +47,7 @@ namespace FileEncryptor.WPF.Services
             int reader;
             do
             {
+                Thread.Sleep(1);
                 reader = source.Read(buffer, 0, bufferLength);
                 destination.Write(buffer, 0, reader);
             } 
