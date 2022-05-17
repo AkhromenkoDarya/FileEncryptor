@@ -7,8 +7,55 @@
         DataContext="{Binding MainWindowModel, Source={StaticResource Locator}}"
         Title="{Binding Title}"
         mc:Ignorable="d"
-        Width="800" Height="450">
-    <Grid>
+        Width="450" Height="210">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Exit"/>
+            </MenuItem>
+        </Menu>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem DockPanel.Dock="Right">
+                <ResizeGrip/>
+            </StatusBarItem>
+            <StatusBarItem Content="Ready"/>
+        </StatusBar>
+        <Grid/>
+        <Grid Margin="3">
+            <Grid.Resources>
+                <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                        <Trigger Property="Grid.Column" Value="0">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="Margin" Value="0,0,3,0"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="Margin" Value="3"/>
+                </Style>
+            </Grid.Resources>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
 
-    </Grid>
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Password:"/>
+            <TextBox Grid.Column="1" Grid.Row="0" Text="123"/>
+
+            <TextBlock Grid.Column="0" Grid.Row="1" Text="File:"/>
+            <DockPanel Grid.Column="1" Grid.Row="1">
+                <Button DockPanel.Dock="Right" Content="Select" Margin="0,0,3,0" Padding="10,0"/>
+                <TextBox IsReadOnly="True" BorderThickness="0"/>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
 </Window>
