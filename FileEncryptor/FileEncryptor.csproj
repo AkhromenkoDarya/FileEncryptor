@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\Commands\Base\" />
     <Folder Include="Services\Interfaces\" />
     <Folder Include="ViewModels\Locator\" />
     <Folder Include="ViewModels\Registration\" />
