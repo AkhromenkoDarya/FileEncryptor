@@ -5,7 +5,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace FileEncryptor.WPF.Services
 {
@@ -57,6 +56,7 @@ namespace FileEncryptor.WPF.Services
 
             do
             {
+                Thread.Sleep(1);
                 readCount = source.Read(buffer, 0, bufferLength);
                 destination.Write(buffer, 0, readCount);
             } 
@@ -203,46 +203,47 @@ namespace FileEncryptor.WPF.Services
 
             try
             {
+                await using FileStream destinationDecrypted = File.Create(destinationPath,
+                    bufferLength);
+                await using var destination = new CryptoStream(destinationDecrypted, decryptor,
+                    CryptoStreamMode.Write);
+                await using FileStream encryptedSource = File.OpenRead(sourcePath);
+
+                long fileLength = encryptedSource.Length;
+                var buffer = new byte[bufferLength];
+                int readCount;
+                var lastPercent = 0.0;
+
+                do
+                {
+                    readCount = await encryptedSource.ReadAsync(buffer, 0, bufferLength, token)
+                        .ConfigureAwait(false);
+                    await destination.WriteAsync(buffer, 0, readCount, token).ConfigureAwait(false);
+
+                    long position = encryptedSource.Position;
+                    double percent = (double)position / fileLength;
+
+                    if (percent - lastPercent >= 0.001)
+                    {
+                        progress?.Report(percent);
+                        lastPercent = percent;
+                    }
+                    
+                    token.ThrowIfCancellationRequested();
+                } 
+                while (readCount > 0);
+
                 try
                 {
-                    await using FileStream destinationDecrypted = File.Create(destinationPath,
-                        bufferLength);
-                    await using var destination = new CryptoStream(destinationDecrypted, decryptor,
-                        CryptoStreamMode.Write);
-                    await using FileStream encryptedSource = File.OpenRead(sourcePath);
-
-                    long fileLength = encryptedSource.Length;
-                    var buffer = new byte[bufferLength];
-                    int readCount;
-                    var lastPercent = 0.0;
-
-                    do
-                    {
-                        readCount = await encryptedSource.ReadAsync(buffer, 0, bufferLength, token)
-                            .ConfigureAwait(false);
-                        await destination.WriteAsync(buffer, 0, readCount, token).ConfigureAwait(false);
-
-                        long position = encryptedSource.Position;
-                        double percent = (double)position / fileLength;
-
-                        if (percent - lastPercent >= 0.001)
-                        {
-                            progress?.Report(percent);
-                            lastPercent = percent;
-                        }
-
-                        token.ThrowIfCancellationRequested();
-                    }
-                    while (readCount > 0);
-
                     destination.FlushFinalBlock();
-                    progress?.Report(1);
                 }
                 catch (CryptographicException)
                 {
-                    //return Task.FromResult(ex);
+                    //return Task.FromResult(false);
                     return false;
                 }
+
+                progress?.Report(1);
             }
             catch (OperationCanceledException)
             {

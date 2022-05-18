@@ -1,17 +1,17 @@
-﻿using System;
-using FileEncryptor.WPF.Services.Interfaces;
+﻿using FileEncryptor.WPF.Services.Interfaces;
+using FileEncryptor.WPF.Views.Windows;
 using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Windows;
-using FileEncryptor.WPF.Views.Windows;
 
 namespace FileEncryptor.WPF.Services
 {
     internal class UserDialogService : IUserDialog
     {
-        public bool OpenFile(string title, out string selectedFile, string filter = 
+        public bool OpenFile(string title, out string selectedFilePath, string filter = 
             "Все файлы (*.*)|*.*")
         {
             var fileDialog = new OpenFileDialog
@@ -22,37 +22,37 @@ namespace FileEncryptor.WPF.Services
 
             if (fileDialog.ShowDialog() != true)
             {
-                selectedFile = null;
+                selectedFilePath = null;
                 return false;
             }
 
-            selectedFile = fileDialog.FileName;
+            selectedFilePath = fileDialog.FileName;
 
             return true;
         }
 
-        public bool OpenFiles(string title, out IEnumerable<string> selectedFiles, string filter = 
-            "Все файлы (*.*)|*.*")
-        {
-            var fileDialog = new OpenFileDialog
-            {
-                Title = title,
-                Filter = filter
-            };
-
-            if (fileDialog.ShowDialog() != true)
-            {
-                selectedFiles = Enumerable.Empty<string>();
-                return false;
-            }
-
-            selectedFiles = fileDialog.FileNames;
-
-            return true;
-        }
-
-        public bool SaveFile(string title, out string selectedFile, string defaultFileName = null, 
+        public bool OpenFiles(string title, out IEnumerable<string> selectedFilePaths, 
             string filter = "Все файлы (*.*)|*.*")
+        {
+            var fileDialog = new OpenFileDialog
+            {
+                Title = title,
+                Filter = filter
+            };
+
+            if (fileDialog.ShowDialog() != true)
+            {
+                selectedFilePaths = Enumerable.Empty<string>();
+                return false;
+            }
+
+            selectedFilePaths = fileDialog.FileNames;
+
+            return true;
+        }
+
+        public bool SaveFile(string title, out string selectedFilePath, string defaultFilePath = 
+                null, string filter = "Все файлы (*.*)|*.*")
         {
             var fileDialog = new SaveFileDialog
             {
@@ -60,18 +60,18 @@ namespace FileEncryptor.WPF.Services
                 Filter = filter
             };
 
-            if (!string.IsNullOrWhiteSpace(defaultFileName))
+            if (!string.IsNullOrWhiteSpace(defaultFilePath))
             {
-                fileDialog.FileName = defaultFileName;
+                fileDialog.FileName = defaultFilePath;
             }
 
             if (fileDialog.ShowDialog() != true)
             {
-                selectedFile = null;
+                selectedFilePath = null;
                 return false;
             }
 
-            selectedFile = fileDialog.FileName;
+            selectedFilePath = fileDialog.FileName;
 
             return true;
         }
