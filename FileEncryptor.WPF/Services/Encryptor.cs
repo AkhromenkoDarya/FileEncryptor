@@ -134,6 +134,7 @@ namespace FileEncryptor.WPF.Services
                 long fileLength = source.Length;
                 var buffer = new byte[bufferLength];
                 int readCount;
+                var lastPercent = 0.0;
 
                 do
                 {
@@ -143,7 +144,13 @@ namespace FileEncryptor.WPF.Services
                     await destination.WriteAsync(buffer, 0, readCount, token).ConfigureAwait(false);
 
                     long position = source.Position;
-                    progress?.Report((double)position / fileLength);
+                    double percent = (double)position / fileLength;
+
+                    if (percent - lastPercent >= 0.001)
+                    {
+                        progress?.Report(percent);
+                        lastPercent = percent;
+                    }
 
                     if (token.IsCancellationRequested)
                     {
@@ -158,7 +165,8 @@ namespace FileEncryptor.WPF.Services
             }
             catch (OperationCanceledException)
             {
-                File.Delete(destinationPath);
+                //File.Delete(destinationPath);
+                progress?.Report(0);
                 throw;
             }
             catch (Exception error)
@@ -203,6 +211,8 @@ namespace FileEncryptor.WPF.Services
                 long fileLength = encryptedSource.Length;
                 var buffer = new byte[bufferLength];
                 int readCount;
+                var lastPercent = 0.0;
+
                 do
                 {
                     readCount = await encryptedSource.ReadAsync(buffer, 0, bufferLength, token)
@@ -210,7 +220,13 @@ namespace FileEncryptor.WPF.Services
                     await destination.WriteAsync(buffer, 0, readCount, token).ConfigureAwait(false);
 
                     long position = encryptedSource.Position;
-                    progress?.Report((double)position / fileLength);
+                    double percent = (double)position / fileLength;
+
+                    if (percent - lastPercent >= 0.001)
+                    {
+                        progress?.Report(percent);
+                        lastPercent = percent;
+                    }
 
                     token.ThrowIfCancellationRequested();
                 }
@@ -225,10 +241,13 @@ namespace FileEncryptor.WPF.Services
                     //return Task.FromResult(false);
                     return false;
                 }
+
+                progress?.Report(1);
             }
             catch (OperationCanceledException)
             {
-                File.Delete(destinationPath);
+                //File.Delete(destinationPath);
+                progress?.Report(0);
                 throw;
             }
 
