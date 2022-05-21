@@ -7,7 +7,7 @@ namespace FileEncryptor.Console
 {
     internal class Program
     {
-        private const string EncodedExtension  = ".aes";
+        private const string EncryptedExtension  = ".aes";
 
         private const int BufferSize = 1024 * 1024;
 
@@ -24,7 +24,7 @@ namespace FileEncryptor.Console
             {
                 string ext = file.Extension;
 
-                if (string.Equals(ext, EncodedExtension, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(ext, EncryptedExtension, StringComparison.OrdinalIgnoreCase))
                 {
                     Decrypt(file);
                 }
@@ -37,11 +37,11 @@ namespace FileEncryptor.Console
 
         private static void Encrypt(FileInfo file)
         {
-            System.Console.WriteLine("The file is being encrypted...");
-            System.Console.WriteLine(file.FullName);
+            System.Console.WriteLine("\nThe file is being encrypted...");
+            System.Console.WriteLine($"\nSource file: {file.FullName}");
 
-            var encodedFile = new FileInfo($"{file.FullName}{EncodedExtension}");
-            System.Console.WriteLine(encodedFile.FullName);
+            var encodedFile = new FileInfo($"{file.FullName}{EncryptedExtension}");
+            System.Console.WriteLine($"\nDestination file: {encodedFile.FullName}\n");
 
             string fileName = Path.GetFileNameWithoutExtension(file.Name);
 
@@ -59,14 +59,17 @@ namespace FileEncryptor.Console
 
         private static void Decrypt(FileInfo file)
         {
-            System.Console.WriteLine("The file is being decrypted...");
-            System.Console.WriteLine(file.FullName);
+            System.Console.WriteLine("\nThe file is being decrypted...");
+            System.Console.WriteLine($"\nSource file: {file.FullName}");
 
-            string sourceFileFullName = Path.GetFileNameWithoutExtension(file.FullName);
-            var source = new FileInfo(sourceFileFullName);
-            System.Console.WriteLine(source.FullName);
+            string sourceFileNameWithoutEncryptedExtension = Path.GetFileNameWithoutExtension(file
+                .FullName);
+            var source = new FileInfo($"{file.DirectoryName}\\" +
+                                      $"{sourceFileNameWithoutEncryptedExtension}");
+            System.Console.WriteLine($"\nDestination file: {source.FullName}\n");
 
-            string password = Path.GetFileNameWithoutExtension(sourceFileFullName);
+            string password = Path.GetFileNameWithoutExtension(
+                sourceFileNameWithoutEncryptedExtension);
             using Aes aes = CreateAes(password);
             ICryptoTransform decryptor = aes.CreateDecryptor();
 
@@ -83,7 +86,7 @@ namespace FileEncryptor.Console
             {
                 source.Delete();
                 System.Console.CursorLeft = 0;
-                System.Console.WriteLine("File name error");
+                System.Console.WriteLine("\nFile name error\n");
                 System.Console.WriteLine();
             }
         }
@@ -102,14 +105,14 @@ namespace FileEncryptor.Console
 
                 readInfoTotal += readInfo;
                 System.Console.CursorLeft = 0;
-                System.Console.Write("Completed in {0:p2}", readInfoTotal / totalLength);
+                System.Console.Write("Completed {0:p2}", readInfoTotal / totalLength);
             }
             while (readInfo == BufferSize);
 
             destination.FlushFinalBlock();
 
             System.Console.CursorLeft = 0;
-            System.Console.WriteLine("Completed");
+            System.Console.Write("Operation completed successfully\n");
             System.Console.WriteLine();
         }
 

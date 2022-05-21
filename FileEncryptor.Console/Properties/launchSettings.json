@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FileEncryptor.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Test\\Source\\GigabyteFile.txt"
+    }
+  }
+}
