@@ -13,11 +13,11 @@ namespace FileEncryptor.WPF.Services.Interfaces
             102400);
 
         Task EncryptAsync(string sourcePath, string destinationPath, string password, 
-            int bufferLength = 104200, IProgress<double> progress = null, CancellationToken token = 
-                default);
+            int bufferLength = 102400, IProgress<double> progress = null, 
+            CancellationToken cancellationToken = default);
 
         Task<bool> DecryptAsync(string sourcePath, string destinationPath, string password, 
-            int bufferLength = 104200, IProgress<double> progress = null, CancellationToken token = 
-                default);
+            int bufferLength = 102400, IProgress<double> progress = null, 
+            CancellationToken cancellationToken = default);
     }
 }

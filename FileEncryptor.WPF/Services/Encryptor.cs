@@ -1,6 +1,5 @@
 ﻿using FileEncryptor.WPF.Services.Interfaces;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
@@ -24,7 +23,6 @@ namespace FileEncryptor.WPF.Services
             var algorithm = Rijndael.Create();
             algorithm.Key = pdb.GetBytes(32);
             algorithm.IV = pdb.GetBytes(16);
-            algorithm.Padding = PaddingMode.Zeros;
             return algorithm.CreateEncryptor();
         }
 
@@ -34,7 +32,6 @@ namespace FileEncryptor.WPF.Services
             var algorithm = Rijndael.Create();
             algorithm.Key = pdb.GetBytes(32);
             algorithm.IV = pdb.GetBytes(16);
-            algorithm.Padding = PaddingMode.Zeros;
             return algorithm.CreateDecryptor();
         }
 
@@ -106,7 +103,7 @@ namespace FileEncryptor.WPF.Services
             string password, 
             int bufferLength = 102400, 
             IProgress<double> progress = null, 
-            CancellationToken token = default)
+            CancellationToken cancellationToken = default)
         {
             if (!File.Exists(sourcePath))
             {
@@ -120,7 +117,7 @@ namespace FileEncryptor.WPF.Services
                     "Read buffer size must be greater than 0");
             }
 
-            token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             ICryptoTransform encryptor = GetEncryptor(password/*, Encoding.UTF8.GetBytes(SourcePath)*/);
 
@@ -139,10 +136,11 @@ namespace FileEncryptor.WPF.Services
 
                 do
                 {
-                    readCount = await source.ReadAsync(buffer, 0, bufferLength, token)
-                        .ConfigureAwait(false);
+                    readCount = await source.ReadAsync(buffer, 0, bufferLength, 
+                        cancellationToken).ConfigureAwait(false);
                     // Дополнительные действия по завершению асинхронной операции.
-                    await destination.WriteAsync(buffer, 0, readCount, token).ConfigureAwait(false);
+                    await destination.WriteAsync(buffer, 0, readCount, cancellationToken)
+                        .ConfigureAwait(false);
 
                     long position = source.Position;
                     double percent = (double)position / fileLength;
@@ -153,26 +151,20 @@ namespace FileEncryptor.WPF.Services
                         lastPercent = percent;
                     }
 
-                    if (token.IsCancellationRequested)
+                    if (cancellationToken.IsCancellationRequested)
                     {
                         // Очистка состояния операции.
-                        token.ThrowIfCancellationRequested();
+                        cancellationToken.ThrowIfCancellationRequested();
                     }
                 }
                 while (readCount > 0);
 
-                destination.FlushFinalBlock();
+                //destination.FlushFinalBlock();
                 progress?.Report(1);
             }
             catch (OperationCanceledException)
             {
-                //File.Delete(destinationPath);
                 progress?.Report(0);
-                throw;
-            }
-            catch (Exception error)
-            {
-                Debug.WriteLine("Error in EncryptAsync:\r\n{0}", error);
                 throw;
             }
         }
@@ -183,7 +175,7 @@ namespace FileEncryptor.WPF.Services
             string password, 
             int bufferLength = 102400, 
             IProgress<double> progress = null, 
-            CancellationToken token = default)
+            CancellationToken cancellationToken = default)
         {
             if (!File.Exists(sourcePath))
             {
@@ -197,18 +189,18 @@ namespace FileEncryptor.WPF.Services
                     "Read buffer size must be greater than 0");
             }
 
-            token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             ICryptoTransform decryptor = GetDecryptor(password);
 
+            await using FileStream destinationDecrypted = File.Create(destinationPath,
+                bufferLength);
+            await using var destination = new CryptoStream(destinationDecrypted, decryptor,
+                CryptoStreamMode.Write);
+            await using FileStream encryptedSource = File.OpenRead(sourcePath);
+
             try
             {
-                await using FileStream destinationDecrypted = File.Create(destinationPath,
-                    bufferLength);
-                await using var destination = new CryptoStream(destinationDecrypted, decryptor,
-                    CryptoStreamMode.Write);
-                await using FileStream encryptedSource = File.OpenRead(sourcePath);
-
                 long fileLength = encryptedSource.Length;
                 var buffer = new byte[bufferLength];
                 int readCount;
@@ -216,9 +208,10 @@ namespace FileEncryptor.WPF.Services
 
                 do
                 {
-                    readCount = await encryptedSource.ReadAsync(buffer, 0, bufferLength, token)
+                    readCount = await encryptedSource.ReadAsync(buffer, 0, bufferLength,
+                        cancellationToken).ConfigureAwait(false);
+                    await destination.WriteAsync(buffer, 0, readCount, cancellationToken)
                         .ConfigureAwait(false);
-                    await destination.WriteAsync(buffer, 0, readCount, token).ConfigureAwait(false);
 
                     long position = encryptedSource.Position;
                     double percent = (double)position / fileLength;
@@ -228,8 +221,8 @@ namespace FileEncryptor.WPF.Services
                         progress?.Report(percent);
                         lastPercent = percent;
                     }
-                    
-                    token.ThrowIfCancellationRequested();
+
+                    cancellationToken.ThrowIfCancellationRequested();
                 } 
                 while (readCount > 0);
 
@@ -247,7 +240,15 @@ namespace FileEncryptor.WPF.Services
             }
             catch (OperationCanceledException)
             {
-                //File.Delete(destinationPath);
+                try
+                {
+                    destination.FlushFinalBlock();
+                }
+                catch (CryptographicException)
+                {
+                    //Действия по обработке исключения CryptographicException.
+                }
+
                 progress?.Report(0);
                 throw;
             }

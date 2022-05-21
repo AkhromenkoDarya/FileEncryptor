@@ -13,7 +13,9 @@ namespace FileEncryptor.WPF.ViewModels
 {
     internal class MainWindowViewModel : ViewModel
     {
-        private const string EncryptedFileSuffix = ".encrypted";
+        private const string EncryptedFileMark = "(encrypted)";
+
+        private const string DecryptedFileMark = "(decrypted)";
 
         private readonly IUserDialog _userDialog;
 
@@ -155,7 +157,9 @@ namespace FileEncryptor.WPF.ViewModels
                 return;
             }
 
-            string defaultFileName = file.FullName + EncryptedFileSuffix;
+            string defaultFileName = file.FullName.Contains(DecryptedFileMark)
+                ? file.FullName.Replace(DecryptedFileMark, EncryptedFileMark)
+                : file.FullName.Insert(file.FullName.IndexOf('.'), " " + EncryptedFileMark);
 
             if (!_userDialog.SaveFile("Selecting a file for save", out string destinationPath,
                     defaultFileName))
@@ -172,6 +176,7 @@ namespace FileEncryptor.WPF.ViewModels
 
             _processCancellation = new CancellationTokenSource();
             CancellationToken cancellationToken = _processCancellation.Token;
+
             var combineCancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 cancellationToken, operationCancellation);
 
@@ -180,13 +185,17 @@ namespace FileEncryptor.WPF.ViewModels
 
             try
             {
-                await _encryptor.EncryptAsync(file.FullName, destinationPath, Password, 
-                    progress: progressInfo, token: combineCancellation.Token);
+                await _encryptor.EncryptAsync(file.FullName, destinationPath, Password,
+                    progress: progressInfo, cancellationToken: combineCancellation.Token);
+
+                _userDialog.Information("Encryption", "File encryption completed " +
+                                                      $"successfully in {timer.Elapsed.TotalSeconds:0.##} с");
             }
             catch (OperationCanceledException exc) when (exc.CancellationToken == combineCancellation
-                .Token)
+                                                             .Token)
             {
-
+                _userDialog.Warning("Encryption Cancellation", "Encryption operation canceled " +
+                                                                   "successfully");
             }
             finally
             {
@@ -195,13 +204,10 @@ namespace FileEncryptor.WPF.ViewModels
                 closeWindow();
             }
 
-            ((Command)EncryptCommand).Executable = true;
-            ((Command)DecryptCommand).Executable = true;
-
             timer.Stop();
 
-            //_userDialog.Information("Decryption", "File encryption completed " +
-            //                                      $"successfully in {timer.Elapsed.TotalSeconds:0.##} с");
+            ((Command)EncryptCommand).Executable = true;
+            ((Command)DecryptCommand).Executable = true;
         }
 
         #endregion
@@ -237,9 +243,9 @@ namespace FileEncryptor.WPF.ViewModels
                 return;
             }
 
-            string defaultFileName = file.FullName.EndsWith(EncryptedFileSuffix)
-                ? file.FullName[..^EncryptedFileSuffix.Length]
-                : file.FullName;
+            string defaultFileName = file.FullName.Contains(EncryptedFileMark)
+                ? file.FullName.Replace(EncryptedFileMark, DecryptedFileMark)
+                : file.FullName.Insert(file.FullName.IndexOf('.'), " " + DecryptedFileMark);
 
             if (!_userDialog.SaveFile("Selecting a file to save", out string destinationPath, 
                     defaultFileName))
@@ -248,8 +254,6 @@ namespace FileEncryptor.WPF.ViewModels
             }
 
             var timer = Stopwatch.StartNew();
-
-            //var displayedProgress = new Progress<double>(percent => ProgressValue = percent);
             
             _processCancellation = new CancellationTokenSource();
             CancellationToken cancellationToken = _processCancellation.Token;
@@ -265,20 +269,30 @@ namespace FileEncryptor.WPF.ViewModels
             ((Command)EncryptCommand).Executable = false;
             ((Command)DecryptCommand).Executable = false;
 
-            var success = false;
-
             try
             {
-                Task<bool> decryptionTask = _encryptor.DecryptAsync(file.FullName, 
-                    destinationPath, Password, progress: progressInfo, token: combineCancellation
-                        .Token);
-                // Дополнительный код, выполняемый параллельно процессу дешифрования.
-                success = await decryptionTask;
-            }
-            catch (OperationCanceledException exc) when (exc.CancellationToken == 
-                combineCancellation.Token)
-            {
+                Task<bool> decryptionTask = _encryptor.DecryptAsync(file.FullName, destinationPath,
+                    Password, progress: progressInfo, cancellationToken: combineCancellation.Token);
 
+                // Дополнительный код, выполняемый параллельно процессу дешифрования.
+
+                bool success = await decryptionTask;
+
+                if (success)
+                {
+                    _userDialog.Information("Decryption", "File decryption completed " +
+                                                          $"successfully in {timer.Elapsed.TotalSeconds:0.##} с");
+                }
+                else
+                {
+                    _userDialog.Error("Decryption", $"{file.Name} decryption failed: invalid password");
+                }
+            }
+            catch (OperationCanceledException exc) when (exc.CancellationToken == combineCancellation
+                                                             .Token)
+            {
+                _userDialog.Warning("Decryption Cancellation", "Decryption operation canceled " +
+                                                                   "successfully");
             }
             finally
             {
@@ -287,19 +301,10 @@ namespace FileEncryptor.WPF.ViewModels
                 closeWindow();
             }
 
-            ((Command)EncryptCommand).Executable = true;
-            ((Command)DecryptCommand).Executable = true;
-
             timer.Stop();
 
-            //if (success)
-            //{
-            //    _userDialog.Information("Decryption", "File decryption completed " + 
-            //                                          $"successfully in {timer.Elapsed.TotalSeconds:0.##} с");
-            //    return;
-            //}
-
-            //_userDialog.Error("Decryption", "File decryption error: invalid password");
+            ((Command)EncryptCommand).Executable = true;
+            ((Command)DecryptCommand).Executable = true;
         }
 
         #endregion
